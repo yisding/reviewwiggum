@@ -1,3 +1,11 @@
+if [ -n "$RW_BASE_BRANCH" ]; then
+  BASE_BRANCH="$RW_BASE_BRANCH"
+elif command -v gh >/dev/null 2>&1; then
+  BASE_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)
+fi
+BASE_BRANCH="${BASE_BRANCH:-main}"
+echo "Using base branch: $BASE_BRANCH"
+
 MAX_ITERATIONS=5
 iteration=0
 
@@ -7,7 +15,7 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
 
   head_before=$(git rev-parse HEAD)
 
-  codex review --base main > REVIEW.txt 2>&1
+  codex review --base "$BASE_BRANCH" > REVIEW.txt 2>&1
   claude --permission-mode acceptEdits -p "Look at the review comments in REVIEW.txt. Fix them if they make sense. If you made changes, commit them with an explanation of what you did, but don't include the REVIEW.txt in the commit."
 
   head_after=$(git rev-parse HEAD)

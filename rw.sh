@@ -16,7 +16,7 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
   head_before=$(git rev-parse HEAD)
 
   codex review --base "$BASE_BRANCH" > REVIEW.txt 2>&1
-  claude --permission-mode acceptEdits -p "Look at the review comments in REVIEW.txt. Fix them if they make sense. If you made changes, commit them with an explanation of what you did, but don't include the REVIEW.txt in the commit."
+  claude --allowed-tools "Bash(git:*) Edit" -p "Look at the review comments in REVIEW.txt. Fix them if they make sense. If you made changes, commit them with an explanation of what you did, but don't include the REVIEW.txt in the commit."
 
   head_after=$(git rev-parse HEAD)
 

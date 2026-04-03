@@ -15,10 +15,10 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
 
   head_before=$(git rev-parse HEAD)
 
-  if command -v codex >/dev/null 2>&1; then
-    codex review --base "$BASE_BRANCH" > REVIEW.txt 2>&1
-  else
+  if [ "$USE_AGENT" = "claude" ] || ! command -v codex >/dev/null 2>&1; then
     claude --permission-mode auto -p "/review" > REVIEW.txt 2>&1
+  else
+    codex review --base "$BASE_BRANCH" > REVIEW.txt 2>&1
   fi
   claude --allowed-tools "Bash(git:*) Edit" -p "Look at the review comments in REVIEW.txt. Fix them if they make sense. If you made changes, commit them with an explanation of what you did, but don't include the REVIEW.txt in the commit."
 

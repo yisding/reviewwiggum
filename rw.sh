@@ -6,7 +6,7 @@ fi
 BASE_BRANCH="${BASE_BRANCH:-main}"
 echo "Using base branch: $BASE_BRANCH"
 
-MAX_ITERATIONS=5
+MAX_ITERATIONS="${RW_MAX_ITERATIONS:-5}"
 iteration=0
 
 while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do

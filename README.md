@@ -1,4 +1,4 @@
-# Review Wiggum
+# Review Wiggum (automated code review/fixes with Codex and Claude)
 
 Review Wiggum, birth name CR Wiggum, is the brightest Wiggum brother.
 

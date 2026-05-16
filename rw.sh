@@ -10,6 +10,22 @@ MAX_ITERATIONS="${RW_MAX_ITERATIONS:-5}"
 MODE="${RW_MODE:-fix}"
 iteration=0
 
+# Codex emits a large amount of progress/thinking output before the actual
+# review. Keep only the final "Full review comments:" section so the file
+# stays small. Match strictly: a blank line, a line that is exactly
+# "Full review comments:", and a blank line after it.
+trim_codex_output() {
+  file="$1"
+  last_line=$(awk '
+    NR >= 3 && pp == "" && p == "Full review comments:" && $0 == "" { match_line = NR - 1 }
+    { pp = p; p = $0 }
+    END { if (match_line) print match_line }
+  ' "$file")
+  if [ -n "$last_line" ]; then
+    tail -n +"$last_line" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+  fi
+}
+
 if [ "$MODE" = "review" ]; then
   FOLDER_NAME=$(basename "$PWD")
   REVIEW_DIR="../REVIEW"
@@ -30,6 +46,7 @@ if [ "$MODE" = "review" ]; then
     else
       echo "Running Codex review -> $OUTPUT_FILE"
       codex review --base "$BASE_BRANCH" > "$OUTPUT_FILE" 2>&1
+      trim_codex_output "$OUTPUT_FILE"
     fi
   done
 
@@ -54,6 +71,7 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
     claude --permission-mode auto -p "/review" > REVIEW.txt 2>&1
   else
     codex review --base "$BASE_BRANCH" > REVIEW.txt 2>&1
+    trim_codex_output REVIEW.txt
   fi
   claude --allowed-tools "Bash(git:*) Edit" -p "Look at the review comments in REVIEW.txt. Fix them if they make sense. If you made changes, commit them with an explanation of what you did, but don't include the REVIEW.txt in the commit."
 

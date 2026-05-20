@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 trap 'echo "Interrupted"; exit 130' INT
 
 if [ -n "$RW_BASE_BRANCH" ]; then
@@ -32,6 +33,9 @@ if [ "$MODE" = "review" ]; then
   FOLDER_NAME=$(basename "$PWD")
   REVIEW_DIR="../REVIEW"
   mkdir -p "$REVIEW_DIR"
+  # Clear out any leftover review files from previous runs of this folder so
+  # higher-numbered stale files don't get consolidated into REVIEW.txt.
+  rm -f "$REVIEW_DIR/${FOLDER_NAME}"-*.txt
   echo "Review-only mode. Outputs -> $REVIEW_DIR/${FOLDER_NAME}-N.txt"
 
   while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
@@ -53,8 +57,8 @@ if [ "$MODE" = "review" ]; then
   done
 
   echo "Copying this folder's review files from $REVIEW_DIR into ./REVIEW"
-  rm -rf ./REVIEW
   mkdir -p ./REVIEW
+  rm -f "./REVIEW/${FOLDER_NAME}"-*.txt
   cp "$REVIEW_DIR/${FOLDER_NAME}"-*.txt ./REVIEW/
 
   echo "Consolidating reviews into REVIEW.txt"

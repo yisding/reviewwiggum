@@ -37,11 +37,17 @@ if [ "$MODE" = "review" ]; then
   REVIEW_DIR="../REVIEW/$FOLDER_NAME"
   mkdir -p "$REVIEW_DIR"
   # Clear out leftover iteration files from previous runs of this folder so
-  # higher-numbered stale files don't get consolidated into REVIEW.txt. Scope
-  # to the N.txt names this script generates instead of wiping every *.txt,
-  # so unrelated files in $REVIEW_DIR aren't deleted.
-  for i in $(seq 1 "$MAX_ITERATIONS"); do
-    rm -f "$REVIEW_DIR/${i}.txt"
+  # higher-numbered stale files don't get consolidated into REVIEW.txt. Match
+  # any fully-numeric <N>.txt (not just 1..MAX_ITERATIONS) so reducing
+  # RW_MAX_ITERATIONS between runs still purges older higher-numbered files,
+  # while unrelated *.txt the user keeps in $REVIEW_DIR is preserved.
+  for f in "$REVIEW_DIR"/*.txt; do
+    [ -e "$f" ] || continue
+    stem=$(basename "$f" .txt)
+    case "$stem" in
+      ''|*[!0-9]*) ;;
+      *) rm -f "$f" ;;
+    esac
   done
   echo "Review-only mode. Outputs -> $REVIEW_DIR/N.txt"
 
@@ -70,10 +76,19 @@ if [ "$MODE" = "review" ]; then
   # ../REVIEW/$FOLDER_NAME == ./REVIEW). Otherwise we'd delete the files we
   # just generated.
   if [ "$(cd "$REVIEW_DIR" && pwd)" != "$(cd ./REVIEW && pwd)" ]; then
-    # Scope cleanup and copy to this script's N.txt iteration files so any
-    # unrelated *.txt files the user keeps in ./REVIEW aren't deleted.
+    # Scope cleanup to fully-numeric <N>.txt names this script produces (across
+    # any iteration count, not just 1..MAX_ITERATIONS) so reducing
+    # RW_MAX_ITERATIONS between runs doesn't leave stale higher-numbered files
+    # in ./REVIEW, while unrelated *.txt the user keeps here is preserved.
+    for f in ./REVIEW/*.txt; do
+      [ -e "$f" ] || continue
+      stem=$(basename "$f" .txt)
+      case "$stem" in
+        ''|*[!0-9]*) ;;
+        *) rm -f "$f" ;;
+      esac
+    done
     for i in $(seq 1 "$MAX_ITERATIONS"); do
-      rm -f "./REVIEW/${i}.txt"
       if [ -f "$REVIEW_DIR/${i}.txt" ]; then
         cp "$REVIEW_DIR/${i}.txt" ./REVIEW/
       fi

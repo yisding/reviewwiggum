@@ -61,8 +61,14 @@ if [ "$MODE" = "review" ]; then
 
   echo "Copying this folder's review files from $REVIEW_DIR into ./REVIEW"
   mkdir -p ./REVIEW
-  rm -f ./REVIEW/*.txt
-  cp "$REVIEW_DIR"/*.txt ./REVIEW/
+  # Skip the wipe-and-copy when source and destination resolve to the same
+  # directory (happens when this repo's folder is literally named REVIEW, so
+  # ../REVIEW/$FOLDER_NAME == ./REVIEW). Otherwise we'd delete the files we
+  # just generated.
+  if [ "$(cd "$REVIEW_DIR" && pwd)" != "$(cd ./REVIEW && pwd)" ]; then
+    rm -f ./REVIEW/*.txt
+    cp "$REVIEW_DIR"/*.txt ./REVIEW/
+  fi
 
   echo "Consolidating reviews into REVIEW.txt"
   claude --permission-mode auto -p "Read every review file in the REVIEW/ directory and consolidate them into a single, well-organized code review. Group related comments, deduplicate overlapping feedback from different reviewers, make sure the comments make sense, and write the consolidated code review to REVIEW.txt."

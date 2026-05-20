@@ -31,18 +31,21 @@ trim_codex_output() {
 
 if [ "$MODE" = "review" ]; then
   FOLDER_NAME=$(basename "$PWD")
-  REVIEW_DIR="../REVIEW"
+  # Use a per-repo subdirectory so sibling repos whose names share a hyphenated
+  # prefix (e.g. `api` vs `api-server`) can't clobber each other's review files
+  # via prefix-glob matching.
+  REVIEW_DIR="../REVIEW/$FOLDER_NAME"
   mkdir -p "$REVIEW_DIR"
   # Clear out any leftover review files from previous runs of this folder so
   # higher-numbered stale files don't get consolidated into REVIEW.txt.
-  rm -f "$REVIEW_DIR/${FOLDER_NAME}"-*.txt
-  echo "Review-only mode. Outputs -> $REVIEW_DIR/${FOLDER_NAME}-N.txt"
+  rm -f "$REVIEW_DIR"/*.txt
+  echo "Review-only mode. Outputs -> $REVIEW_DIR/N.txt"
 
   while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
     iteration=$((iteration + 1))
     echo "=== Review iteration $iteration ==="
 
-    OUTPUT_FILE="$REVIEW_DIR/${FOLDER_NAME}-${iteration}.txt"
+    OUTPUT_FILE="$REVIEW_DIR/${iteration}.txt"
 
     # Alternate: Claude on odd iterations, Codex on even.
     # Fall back to Claude if codex isn't installed.
@@ -58,8 +61,8 @@ if [ "$MODE" = "review" ]; then
 
   echo "Copying this folder's review files from $REVIEW_DIR into ./REVIEW"
   mkdir -p ./REVIEW
-  rm -f "./REVIEW/${FOLDER_NAME}"-*.txt
-  cp "$REVIEW_DIR/${FOLDER_NAME}"-*.txt ./REVIEW/
+  rm -f ./REVIEW/*.txt
+  cp "$REVIEW_DIR"/*.txt ./REVIEW/
 
   echo "Consolidating reviews into REVIEW.txt"
   claude --permission-mode auto -p "Read every review file in the REVIEW/ directory and consolidate them into a single, well-organized code review. Group related comments, deduplicate overlapping feedback from different reviewers, make sure the comments make sense, and write the consolidated code review to REVIEW.txt."

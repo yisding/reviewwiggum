@@ -36,9 +36,13 @@ if [ "$MODE" = "review" ]; then
   # via prefix-glob matching.
   REVIEW_DIR="../REVIEW/$FOLDER_NAME"
   mkdir -p "$REVIEW_DIR"
-  # Clear out any leftover review files from previous runs of this folder so
-  # higher-numbered stale files don't get consolidated into REVIEW.txt.
-  rm -f "$REVIEW_DIR"/*.txt
+  # Clear out leftover iteration files from previous runs of this folder so
+  # higher-numbered stale files don't get consolidated into REVIEW.txt. Scope
+  # to the N.txt names this script generates instead of wiping every *.txt,
+  # so unrelated files in $REVIEW_DIR aren't deleted.
+  for i in $(seq 1 "$MAX_ITERATIONS"); do
+    rm -f "$REVIEW_DIR/${i}.txt"
+  done
   echo "Review-only mode. Outputs -> $REVIEW_DIR/N.txt"
 
   while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
@@ -66,8 +70,14 @@ if [ "$MODE" = "review" ]; then
   # ../REVIEW/$FOLDER_NAME == ./REVIEW). Otherwise we'd delete the files we
   # just generated.
   if [ "$(cd "$REVIEW_DIR" && pwd)" != "$(cd ./REVIEW && pwd)" ]; then
-    rm -f ./REVIEW/*.txt
-    cp "$REVIEW_DIR"/*.txt ./REVIEW/
+    # Scope cleanup and copy to this script's N.txt iteration files so any
+    # unrelated *.txt files the user keeps in ./REVIEW aren't deleted.
+    for i in $(seq 1 "$MAX_ITERATIONS"); do
+      rm -f "./REVIEW/${i}.txt"
+      if [ -f "$REVIEW_DIR/${i}.txt" ]; then
+        cp "$REVIEW_DIR/${i}.txt" ./REVIEW/
+      fi
+    done
   fi
 
   echo "Consolidating reviews into REVIEW.txt"

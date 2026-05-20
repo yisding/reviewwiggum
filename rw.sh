@@ -69,34 +69,14 @@ if [ "$MODE" = "review" ]; then
     fi
   done
 
-  echo "Copying this folder's review files from $REVIEW_DIR into ./REVIEW"
-  mkdir -p ./REVIEW
-  # Skip the wipe-and-copy when source and destination resolve to the same
-  # directory (happens when this repo's folder is literally named REVIEW, so
-  # ../REVIEW/$FOLDER_NAME == ./REVIEW). Otherwise we'd delete the files we
-  # just generated.
-  if [ "$(cd "$REVIEW_DIR" && pwd)" != "$(cd ./REVIEW && pwd)" ]; then
-    # Scope cleanup to fully-numeric <N>.txt names this script produces (across
-    # any iteration count, not just 1..MAX_ITERATIONS) so reducing
-    # RW_MAX_ITERATIONS between runs doesn't leave stale higher-numbered files
-    # in ./REVIEW, while unrelated *.txt the user keeps here is preserved.
-    for f in ./REVIEW/*.txt; do
-      [ -e "$f" ] || continue
-      stem=$(basename "$f" .txt)
-      case "$stem" in
-        ''|*[!0-9]*) ;;
-        *) rm -f "$f" ;;
-      esac
-    done
-    for i in $(seq 1 "$MAX_ITERATIONS"); do
-      if [ -f "$REVIEW_DIR/${i}.txt" ]; then
-        cp "$REVIEW_DIR/${i}.txt" ./REVIEW/
-      fi
-    done
-  fi
-
   echo "Consolidating reviews into REVIEW.txt"
-  claude --permission-mode auto -p "Read every review file in the REVIEW/ directory and consolidate them into a single, well-organized code review. Group related comments, deduplicate overlapping feedback from different reviewers, make sure the comments make sense, and write the consolidated code review to REVIEW.txt."
+  # Consolidate directly from $REVIEW_DIR (the per-repo subdirectory this
+  # script owns under ../REVIEW). The previous design mirrored files into a
+  # local ./REVIEW directory first, which required deleting any pre-existing
+  # numeric <N>.txt to avoid stale entries — risking data loss if the user
+  # already kept numeric .txt files there. Reading the originals in place
+  # avoids touching ./REVIEW at all.
+  claude --permission-mode auto -p "Read every review file in the directory $REVIEW_DIR (a path relative to the current working directory) and consolidate them into a single, well-organized code review. Group related comments, deduplicate overlapping feedback from different reviewers, make sure the comments make sense, and write the consolidated code review to ./REVIEW.txt."
 
   exit 0
 fi

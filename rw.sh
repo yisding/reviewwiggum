@@ -1,3 +1,5 @@
+trap 'echo "Interrupted"; exit 130' INT
+
 if [ -n "$RW_BASE_BRANCH" ]; then
   BASE_BRANCH="$RW_BASE_BRANCH"
 elif command -v gh >/dev/null 2>&1; then
